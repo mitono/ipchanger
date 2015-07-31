@@ -1,5 +1,5 @@
 # ipchanger.tcl
-# version 01.00.00
+# version 01.01.00
 source combobox.tcl
 package require combobox 2.3
 catch {namespace import combobox::*}
@@ -186,14 +186,19 @@ proc save_setting {} {
 proc setToNic {} {
   set filename netsh.result
   putlog "以下のコマンドを実行します"
-  putlog "netsh interface ipv4 set address \"$::target\" static \
-          [string trimright [.flp.1.fip.text get 1.0 end] "\n"] \
-		  [string trimright [.flp.1.fmask.text get 1.0 end] "\n"] \
-		  [string trimright [.flp.1.fgw.text get 1.0 end] "\n"] \> $filename"
-  exec netsh interface ipv4 set address "$::target" static \
-          [string trimright [.flp.1.fip.text get 1.0 end] "\n"] \
-		  [string trimright [.flp.1.fmask.text get 1.0 end] "\n"] \
-		  [string trimright [.flp.1.fgw.text get 1.0 end] "\n"] > $filename
+  if { $::ip == "dhcp" } {
+    putlog "netsh interface ipv4 set address \"$::target\" dhcp \> $filename"
+    exec netsh interface ipv4 set address "$::target" dhcp > $filename
+  } else {
+    putlog "netsh interface ipv4 set address \"$::target\" static \
+            [string trimright [.flp.1.fip.text get 1.0 end] "\n"] \
+		    [string trimright [.flp.1.fmask.text get 1.0 end] "\n"] \
+		    [string trimright [.flp.1.fgw.text get 1.0 end] "\n"] \> $filename"
+    exec netsh interface ipv4 set address "$::target" static \
+            [string trimright [.flp.1.fip.text get 1.0 end] "\n"] \
+		    [string trimright [.flp.1.fmask.text get 1.0 end] "\n"] \
+		    [string trimright [.flp.1.fgw.text get 1.0 end] "\n"] > $filename
+  }
   refresh_ipconfig
 }
 
