@@ -1,5 +1,5 @@
 # ipchanger.tcl
-# version 01.02.00
+# version 01.03.00
 source combobox.tcl
 package require combobox 2.3
 catch {namespace import combobox::*}
@@ -146,11 +146,14 @@ proc create_new_setting {} {
 proc delete_setting {} {
   set answer [ tk_messageBox -type yesno -icon question -title "削除確認" -message "設定名称：$::setting_name\n本当に削除しても良いですか？" ]
   switch -- $answer {
-   yes { putlog "削除しました" }
+   yes { putlog "削除しました" 
+         save_setting true
+         refresh_target 0 0
+       }
  }
 }
 
-proc save_setting {} {
+proc save_setting {delete_mode} {
   set in false
   set sstart 0
   set send 0
@@ -179,10 +182,14 @@ proc save_setting {} {
   append rp_gw "gw=" [string trimright [.flp.1.fgw.text get 1.0 end] "\n"]
   append rp_dns "dns=" [string trimright [.flp.1.fdns.text get 1.0 end] "\n"]
   append rp_desc "desc=" [string trimright [.flp.2.fdesc.text get 1.0 end] "\n"]
-  if { $sstart==0 && $send==0 } {
-    set ::settings [lreplace $::settings $sstart [expr $send - 3] "\[$::setting_name\]" $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+  if { $delete_mode==true } {
+    set ::settings [lreplace $::settings [expr $sstart - 1] [expr $send - 3] ]
   } else {
-    set ::settings [lreplace $::settings $sstart [expr $send - 3] $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+    if { $sstart==0 && $send==0 } {
+      set ::settings [lreplace $::settings $sstart [expr $send - 3] "\[$::setting_name\]" $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+    } else {
+      set ::settings [lreplace $::settings $sstart [expr $send - 3] $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+    }
   }
   set f [open ./data/$::target w]
   foreach line $::settings {
@@ -190,6 +197,14 @@ proc save_setting {} {
   }
   close $f
   putlog "\"$::setting_name\"の設定を書き込みました"
+}
+
+proc save_and_reload {} {
+  save_setting false
+  set sn $::setting_name
+  refresh_target 0 0
+  set ::setting_name $sn
+  refresh_setting 0 0
 }
 
 proc setToNic {} {
@@ -264,7 +279,7 @@ label .flp.2.fdesc.label -text "説明:" -font $FONT
 text  .flp.2.fdesc.text -font $FONT -height 5 -width 40 -bd 0 -highlightcolor gray -highlightbackground gray -highlightthickness 1
 button .flp.3.fbtns.bdelete -text "削除" -font $FONT -command delete_setting
 button .flp.3.fbtns.bnew -text "クリアして新規作成" -font $FONT -command create_new_setting
-button .flp.3.fbtns.bsave -text "保存" -font $FONT -command save_setting
+button .flp.3.fbtns.bsave -text "保存" -font $FONT -command save_and_reload
 
 button .frp.fbt.bq -text "Quit" -font $FONT -command exit
 frame  .frp.fbt.ffunc
