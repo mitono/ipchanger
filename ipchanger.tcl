@@ -1,5 +1,5 @@
 # ipchanger.tcl
-# version 01.01.00
+# version 01.02.00
 source combobox.tcl
 package require combobox 2.3
 catch {namespace import combobox::*}
@@ -138,6 +138,11 @@ proc refresh_setting {w args} {
   putlog "\"$::setting_name\"の設定を選択しました"
 }
 
+proc create_new_setting {} {
+  set ::setting_name ""
+  refresh_setting 0 0
+}
+
 proc delete_setting {} {
   set answer [ tk_messageBox -type yesno -icon question -title "削除確認" -message "設定名称：$::setting_name\n本当に削除しても良いですか？" ]
   switch -- $answer {
@@ -174,7 +179,11 @@ proc save_setting {} {
   append rp_gw "gw=" [string trimright [.flp.1.fgw.text get 1.0 end] "\n"]
   append rp_dns "dns=" [string trimright [.flp.1.fdns.text get 1.0 end] "\n"]
   append rp_desc "desc=" [string trimright [.flp.2.fdesc.text get 1.0 end] "\n"]
-  set ::settings [lreplace $::settings $sstart [expr $send - 2] $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+  if { $sstart==0 && $send==0 } {
+    set ::settings [lreplace $::settings $sstart [expr $send - 3] "\[$::setting_name\]" $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+  } else {
+    set ::settings [lreplace $::settings $sstart [expr $send - 3] $rp_ip $rp_mask $rp_gw $rp_dns $rp_desc]
+  }
   set f [open ./data/$::target w]
   foreach line $::settings {
     puts $f $line
@@ -254,7 +263,7 @@ text  .flp.1.fdns.text -font $FONT -height 1 -width 15 -bd 0 -highlightcolor gra
 label .flp.2.fdesc.label -text "説明:" -font $FONT
 text  .flp.2.fdesc.text -font $FONT -height 5 -width 40 -bd 0 -highlightcolor gray -highlightbackground gray -highlightthickness 1
 button .flp.3.fbtns.bdelete -text "削除" -font $FONT -command delete_setting
-button .flp.3.fbtns.bnew -text "クリアして新規作成" -font $FONT -command exit
+button .flp.3.fbtns.bnew -text "クリアして新規作成" -font $FONT -command create_new_setting
 button .flp.3.fbtns.bsave -text "保存" -font $FONT -command save_setting
 
 button .frp.fbt.bq -text "Quit" -font $FONT -command exit
